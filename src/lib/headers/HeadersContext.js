@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import createReactContext from 'create-react-context'
-import { noop } from '../utility/generic'
+import {noop} from '../utility/generic'
 
 const defaultContextState = {
   registerScroll: () => {
@@ -14,7 +13,7 @@ const defaultContextState = {
   timeSteps: {}
 }
 
-const { Consumer, Provider } = createReactContext(defaultContextState)
+const {Consumer, Provider} = React.createContext(defaultContextState)
 
 
 export class TimelineHeadersProvider extends React.Component {
