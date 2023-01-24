@@ -169,14 +169,14 @@ export function getNextUnit(unit) {
  * @param {*} resizeTime new resize time in milliseconds
  */
 export function calculateInteractionNewTimes({
-  itemTimeStart,
-  itemTimeEnd,
-  dragTime,
-  isDragging,
-  isResizing,
-  resizingEdge,
-  resizeTime
-}) {
+                                               itemTimeStart,
+                                               itemTimeEnd,
+                                               dragTime,
+                                               isDragging,
+                                               isResizing,
+                                               resizingEdge,
+                                               resizeTime
+                                             }) {
   const originalItemRange = itemTimeEnd - itemTimeStart
   const itemStart =
     isResizing && resizingEdge === 'left' ? resizeTime : itemTimeStart
@@ -189,12 +189,12 @@ export function calculateInteractionNewTimes({
 }
 
 export function calculateDimensions({
-  itemTimeStart,
-  itemTimeEnd,
-  canvasTimeStart,
-  canvasTimeEnd,
-  canvasWidth
-}) {
+                                      itemTimeStart,
+                                      itemTimeEnd,
+                                      canvasTimeStart,
+                                      canvasTimeEnd,
+                                      canvasWidth
+                                    }) {
   const itemTimeRange = itemTimeEnd - itemTimeStart
 
   // restrict startTime and endTime to be bounded by canvasTimeStart and canvasTimeEnd
@@ -387,7 +387,7 @@ export function stackAll(itemsDimensions, groupOrders, lineHeight, stackItems) {
     // Is group being stacked?
     const isGroupStacked =
       group.stackItems !== undefined ? group.stackItems : stackItems
-    const { groupHeight } = stackGroup(
+    const { groupHeight, verticalMargin } = stackGroup(
       itemsDimensions,
       isGroupStacked,
       lineHeight,
@@ -402,7 +402,7 @@ export function stackAll(itemsDimensions, groupOrders, lineHeight, stackItems) {
       groupHeights.push(Math.max(groupHeight, lineHeight))
     }
   }
-  
+
   return {
     height: sum(groupHeights),
     groupHeights,
@@ -411,11 +411,11 @@ export function stackAll(itemsDimensions, groupOrders, lineHeight, stackItems) {
 }
 
 /**
- * 
- * @param {*} itemsDimensions 
- * @param {*} isGroupStacked 
- * @param {*} lineHeight 
- * @param {*} groupTop 
+ *
+ * @param {*} itemsDimensions
+ * @param {*} isGroupStacked
+ * @param {*} lineHeight
+ * @param {*} groupTop
  */
 export function stackGroup(itemsDimensions, isGroupStacked, lineHeight, groupTop) {
   var groupHeight = 0
@@ -538,7 +538,7 @@ export function stackTimelineItems(
  * @param {*} width
  * @param {*} buffer
  */
-export function getCanvasWidth(width, buffer) {
+export function getCanvasWidth(width, buffer = 3) {
   return width * buffer
 }
 
@@ -554,15 +554,15 @@ export function getCanvasWidth(width, buffer) {
  * @param {*} itemHeightRatio
  */
 export function getItemDimensions({
-  item,
-  keys,
-  canvasTimeStart,
-  canvasTimeEnd,
-  canvasWidth,
-  groupOrders,
-  lineHeight,
-  itemHeightRatio
-}) {
+                                    item,
+                                    keys,
+                                    canvasTimeStart,
+                                    canvasTimeEnd,
+                                    canvasWidth,
+                                    groupOrders,
+                                    lineHeight,
+                                    itemHeightRatio
+                                  }) {
   const itemId = _get(item, keys.itemIdKey)
   let dimension = calculateDimensions({
     itemTimeStart: _get(item, keys.itemTimeStartKey),
@@ -597,16 +597,16 @@ export function getItemDimensions({
  * @param {*} newGroupOrder
  */
 export function getItemWithInteractions({
-  item,
-  keys,
-  draggingItem,
-  resizingItem,
-  dragTime,
-  resizingEdge,
-  resizeTime,
-  groups,
-  newGroupOrder
-}) {
+                                          item,
+                                          keys,
+                                          draggingItem,
+                                          resizingItem,
+                                          dragTime,
+                                          resizingEdge,
+                                          resizeTime,
+                                          groups,
+                                          newGroupOrder
+                                        }) {
   if (!resizingItem && !draggingItem) return item
   const itemId = _get(item, keys.itemIdKey)
   const isDragging = itemId === draggingItem
@@ -638,13 +638,11 @@ export function getItemWithInteractions({
  */
 export function getCanvasBoundariesFromVisibleTime(
   visibleTimeStart,
-  visibleTimeEnd,
-  buffer,
+  visibleTimeEnd
 ) {
   const zoom = visibleTimeEnd - visibleTimeStart
-  // buffer - 1 (1 is visible area) divided by 2 (2 is the buffer split on the right and left of the timeline)
-  const canvasTimeStart = visibleTimeStart - (zoom * (buffer - 1 )/2)
-  const canvasTimeEnd = canvasTimeStart + zoom * buffer
+  const canvasTimeStart = visibleTimeStart - (visibleTimeEnd - visibleTimeStart)
+  const canvasTimeEnd = canvasTimeStart + zoom * 3
   return [canvasTimeStart, canvasTimeEnd]
 }
 
@@ -669,9 +667,7 @@ export function calculateScrollCanvas(
   props,
   state
 ) {
-  const buffer = props.buffer;
   const oldCanvasTimeStart = state.canvasTimeStart
-  const oldCanvasTimeEnd = state.canvasTimeEnd
   const oldZoom = state.visibleTimeEnd - state.visibleTimeStart
   const newZoom = visibleTimeEnd - visibleTimeStart
   const newState = { visibleTimeStart, visibleTimeEnd }
@@ -680,15 +676,14 @@ export function calculateScrollCanvas(
   const canKeepCanvas =
     newZoom === oldZoom &&
     visibleTimeStart >= oldCanvasTimeStart + oldZoom * 0.5 &&
-    visibleTimeStart <= oldCanvasTimeEnd - oldZoom * 1.5 &&
+    visibleTimeStart <= oldCanvasTimeStart + oldZoom * 1.5 &&
     visibleTimeEnd >= oldCanvasTimeStart + oldZoom * 1.5 &&
-    visibleTimeEnd <= oldCanvasTimeEnd - oldZoom * 0.5
+    visibleTimeEnd <= oldCanvasTimeStart + oldZoom * 2.5
 
   if (!canKeepCanvas || forceUpdateDimensions) {
     const [canvasTimeStart, canvasTimeEnd] = getCanvasBoundariesFromVisibleTime(
       visibleTimeStart,
-      visibleTimeEnd,
-      buffer
+      visibleTimeEnd
     )
     newState.canvasTimeStart = canvasTimeStart
     newState.canvasTimeEnd = canvasTimeEnd
@@ -697,7 +692,7 @@ export function calculateScrollCanvas(
       ...newState
     }
 
-    const canvasWidth = getCanvasWidth(mergedState.width, props.buffer)
+    const canvasWidth = getCanvasWidth(mergedState.width)
 
     // The canvas cannot be kept, so calculate the new items position
     Object.assign(
